@@ -4,7 +4,7 @@
 
 **Uma ideia de 50 anos que talvez você use sem saber.**
 
-🎤 Talk do **React CWB #50** — 09/06/2026
+🎤 Talk do **Codecon Curitiba** — 21/07/2026
 👤 [Mizael Almeida](https://github.com/mz-alm) · Product Engineer @ Salvy
 
 </div>

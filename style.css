@@ -1,0 +1,8 @@
+/* seriph dims the <p> immediately after an <h1> to 0.5 opacity (its subtitle
+   styling: `.slidev-layout h1 + p { opacity: 0.5 }`). Markdown wraps our demo
+   <video> in exactly that <p>, so the video inherited 0.5 opacity — invisible
+   on the dark bg, but a grey haze on the light theme. Un-dim only paragraphs
+   that actually hold a video (real subtitles stay dimmed as intended). */
+.slidev-layout p:has(video) {
+  opacity: 1 !important;
+}

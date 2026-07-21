@@ -1,8 +1,10 @@
 ---
 theme: seriph
+colorSchema: light
 title: Pattern Matching (…e ts-pattern)
 info: |
-  Pattern matching e ts-pattern — meetup React, pt-BR.
+  Pattern matching e ts-pattern — meetup Codecon (devs em geral), pt-BR.
+  Roteiro completo em roteiro.md.
 highlighter: shiki
 lineNumbers: false
 transition: slide-left
@@ -26,12 +28,12 @@ class: text-center
 uma ideia de 50 anos que talvez você use sem saber
 
 <div class="pt-12 opacity-70">
-  Mizael Almeida · React CWB #50 · 09/06/2026
+  Mizael Almeida · Codecon Curitiba · 21/07/2026
 </div>
 
 ---
 
-# oi, eu sou o Mizael 👋
+# oi, eu sou o Mizael
 
 <div class="flex items-center gap-10 mt-10">
 
@@ -43,8 +45,8 @@ uma ideia de 50 anos que talvez você use sem saber
 
 <div class="mt-6 opacity-80">
 
-🐙 github.com/mz-alm<br>
-💼 linkedin.com/in/mzalmeida
+github.com/mz-alm<br>
+linkedin.com/in/mzalmeida
 
 </div>
 
@@ -98,7 +100,7 @@ um <code>if</code> pergunta <b>sim/não</b>; um pattern pergunta <b>"que forma �
 
 ---
 
-# A herança — não é hype, é história
+# A herança
 
 <div class="grid grid-cols-1 gap-2 text-xl mt-6">
 
@@ -114,7 +116,7 @@ um <code>if</code> pergunta <b>sim/não</b>; um pattern pergunta <b>"que forma �
 
 # Glamour shot: Rust
 
-```rust {all|2-4|5|all}
+```rust {all|2-4|5}
 match estado {
     Loading            => spinner(),
     Error { error }    => caixa_erro(error),
@@ -245,15 +247,6 @@ switch (shape) {
 </div>
 
 ---
-layout: center
-class: text-center
----
-
-# Peraí.
-
-<div v-click class="text-4xl mt-6">Isso não era uma talk de <b>React</b>? 🤨</div>
-
----
 
 # O JS quer isso — TC39
 
@@ -291,14 +284,14 @@ Ou seja: o problema é real e <b>reconhecido</b> — mas nativo, só daqui a uns
 <div>
 
 ```ts
-// num reducer (Redux 👀)
+// num reducer / máquina de estados
 switch (action.type) {
   case "increment":
     return { ...s, n: s.n + 1 };
   case "decrement":
     return { ...s, n: s.n - 1 };
   default:
-    return s; // 👈 engole casos novos
+    return s; // engole casos novos
 }
 ```
 
@@ -306,19 +299,15 @@ switch (action.type) {
 
 <div>
 
-```tsx
-// …e no JSX (loading / error / data — tudo na unha)
-isLoading
-  ? <Spinner />
-  : isError 
-  ? err instanceof Error 
-    ? <Erro msg={err} />
-    : null
-  : data
-  ? data.length
-    ? <Lista itens={data.items} />
-    : null
-  : null; // 🐛 e os cruzamentos?
+```ts
+// …e ao tratar um resultado, na unha:
+if (res.status === "ok") {
+  if (res.data) return handle(res.data);
+  return empty();
+} else if (res.status === "error") {
+  return fail(res.error);
+}
+return retry(); // e os cruzamentos?
 ```
 
 </div>
@@ -327,12 +316,12 @@ isLoading
 
 ---
 
-# Por que o jeito atual dói (em React)
+# Por que o jeito atual dói
 
 <div class="text-xl mt-6 space-y-3">
 
 - `switch` só compara **uma** expressão, com `===` → não correlaciona campos, não olha dentro
-- ternário aninhado no JSX → ilegível com 3+ casos
+- condicional aninhada (if/ternário) → ilegível com 3+ casos
 - **sem exaustividade** → `default` / `: null` esconde caso faltando
 - você adiciona um estado novo → **compila, roda, quebra em prod**
 
@@ -379,23 +368,23 @@ Hoje (front + API): <b>86 arquivos</b>, <b>98 <code>match</code></b>, <b>37 com 
 
 ---
 
-# Degrau 1: o ternário (on-ramp)
+# Degrau 1: união de strings (on-ramp)
 
-<div class="text-sm opacity-50 -mt-2">real: UserStatusBadge</div>
+<div class="text-sm opacity-50 -mt-2">real: prefixo de ICCID por operadora</div>
 
-```tsx {1-6|8-11|12|all}
-// ANTES — ternário aninhado no JSX (2 estados e já feio)
-<Badge variant={status === "active" ? "success" : "information"}>
-  {status === "active"
-    ? <FormattedMessage defaultMessage="Ativo" />
-    : <FormattedMessage defaultMessage="Convidado" />}
-</Badge>
+```ts {1-6|8-11|12}
+// ANTES — switch, e o default aceita operadora nova calado
+switch (operadora) {
+  case "operadora-a": return prefixoA(iccidSuffix);
+  case "operadora-b": return prefixoB(iccidSuffix);
+  default: throw new Error("operadora sem formato de ICCID");
+}
 
 // DEPOIS — o caso mais simples possível de match
-match(status)
-  .with("active",  () => <Badge variant="success">Ativo</Badge>)
-  .with("invited", () => <Badge variant="information">Convidado</Badge>)
-  .exhaustive(); // ✅ "active" | "invited" — e avisa se a union crescer
+match(operadora)
+  .with("operadora-a", () => prefixoA(iccidSuffix))
+  .with("operadora-b", () => prefixoB(iccidSuffix))
+  .exhaustive(); // ✅ some uma operadora nova na union → NÃO COMPILA
 ```
 
 ---
@@ -433,32 +422,25 @@ const descricao = match({ isWhatsApp, isUnlimited })
 
 ---
 
-# Degrau 3: Vários campos de uma vez
+# Degrau 3: casar pela *forma* (união discriminada)
 
-<div class="text-sm opacity-50 -mt-2">lembra deste ternário? 👀 (loading / error / data, aninhado)</div>
+<div class="text-sm opacity-50 -mt-2">real: roteamento de conta de telefone</div>
 
-```tsx
-// o MESMO ternário do slide 10 — aninhado, na unha:
-isLoading
-  ? <Spinner />
-  : isError 
-  ? err instanceof Error 
-    ? <Erro msg={err} />
-    : null
-  : data
-  ? data.length
-    ? <Lista itens={data.items} />
-    : null
-  : null;
+```ts
+// dois tipos de linha, cada um com seu repositório:
+const conta = await match(linha)
+  .with({ tipo: "interna" }, (l) => contasInternas.findById(l.id))
+  .with({ tipo: "externa" }, (l) => contasExternas.getById(l.id))
+  .exhaustive();
 ```
+
 <v-click>
 
-```tsx
-// ...limpo ✨
-match({ isLoading, isError, err, data })
-  .with({ isLoading: true }, () => <Spinner />)
-  .with({ isError: true, err: P.instanceOf(Error) }, ({ err }) => <Erro msg={err} />)
-  .with({ data: [P._, ...P.array(P._)] }, ({ data }) => <Lista itens={data.items} />)
+```ts
+// bônus: normalizar dado bagunçado de fora (snake_case OU camelCase)
+const numero = match(conta)
+  .with({ phone_number: P.nonNullable }, (c) => c.phone_number)
+  .with({ phoneNumber:  P.nonNullable }, (c) => c.phoneNumber)
   .otherwise(() => null);
 ```
 
@@ -468,9 +450,9 @@ match({ isLoading, isError, err, data })
 
 # ⭐ A estrela: união discriminada + `.exhaustive()`
 
-<div class="text-sm opacity-50 -mt-2">real: PhoneAccountTimeline</div>
+<div class="text-sm opacity-50 -mt-2">real: timeline de eventos de uma linha</div>
 
-```ts {all|1-5|7-12|9-10|13|all}
+```ts {all|1-5|7-12|9-10|13}
 type Evento =
   | { nome: "criada" }
   | { nome: "ativada"; simType: "fisico" | "esim" }
@@ -491,24 +473,33 @@ const label = match(evento)
 </div>
 
 ---
+layout: center
+class: text-center
+---
+
+# a demo, gravada
+
+<video controls muted playsinline :src="'/demo-exhaustive.mp4'" class="mx-auto mt-4 max-h-[420px] rounded-lg shadow-2xl"></video>
+
+---
 
 # O callback recebe o tipo **estreitado**
 
 <div class="text-sm opacity-50 -mt-2">…e você monta o retorno de cada caso com ele</div>
 
-```ts {all|2-6|7-11|12-16|all}
+```ts {all|2-6|7-11|12-16}
 const item = match(evento)                     // Mesmo tipo Evento de antes
-  .with({ tipo: "recarga" }, (evt) => ({       // evt: { tipo:"recarga"; gb:number }
+  .with({ nome: "recarga" }, (evt) => ({       // evt: { nome:"recarga"; gb:number }
     icone: Plus,
     titulo: `+${evt.gb} GB`,                   // evt.gb: number ✅
     cor: "green",
   }))
-  .with({ tipo: "ativada" }, (evt) => ({       // evt: { tipo:"ativada"; simType:… }
+  .with({ nome: "ativada" }, (evt) => ({       // evt: { nome:"ativada"; simType:… }
     icone: Power,
     titulo: "Linha ativada",
     detalhe: evt.simType === "fisico" ? "chip físico" : "eSIM", // ignore o ternário 🙄
   }))
-  .with({ tipo: "bloqueada" }, (evt) => ({     // evt: { tipo:"bloqueada"; motivo:string }
+  .with({ nome: "bloqueada" }, (evt) => ({     // evt: { nome:"bloqueada"; motivo:string }
     icone: Lock,
     titulo: "Linha bloqueada",
     detalhe: evt.motivo,                       // evt.motivo: string ✅
@@ -520,7 +511,7 @@ const item = match(evento)                     // Mesmo tipo Evento de antes
 
 # O catálogo: `P`
 
-```ts {all|1|4|5|6|7|8|9|all}
+```ts {all|1|4|5|6|7|8|9}
 import { match, P } from "ts-pattern";
 
 match(input)
@@ -554,7 +545,7 @@ match(input)
 
 <div class="text-sm opacity-50 -mt-2">real: P.when do repo</div>
 
-```ts{all|1-8|1-2|4-5|7-8|10-11|all}
+```ts{all|1-8|1-2|4-5|7-8|10-11}
 // 1. P.when — um guard que VIRA pattern (type guard real, do nosso código)
 .with({ icon: P.when((i): i is IconComponent => typeof i === "function") }, ({ icon }) => render(icon))
 
@@ -594,7 +585,7 @@ match(input)
 O `isMatching` coopera com o `if`, em vez de competir
 
 ```ts
-// isMatching: um PATTERN dentro de um if / filter — o seu "if" com superpoder 💪
+// isMatching: um PATTERN dentro de um if / filter — o seu "if" com superpoder
 const myPattern = { status: "active", plano: { tipo: "ilimitado" } };
 
 if (isMatching(myPattern, value)) { // ou isMatching(myPattern)(value) -> curry 🍛
@@ -609,6 +600,38 @@ linhas.filter(isMatching(myPattern))
 
 ---
 
+# 🍒 Um caso real — semana passada
+
+<div class="text-sm opacity-50 -mt-2">PR do Otte · emissão de nota fiscal</div>
+
+```ts {all|1-6|8-14|13}
+// ANTES — um switch sobre o status da nota
+switch (resultado.status) {
+  case "approved":   return aprovar();
+  case "rejected":   return rejeitar();
+  case "processing": return esperar();
+}  // o contrato ganhou "not-found" depois — o switch nem percebe
+
+// DEPOIS — o mesmo, virado match
+match(resultado)
+  .with({ status: "approved" },   aprovar)
+  .with({ status: "rejected" },   rejeitar)
+  .with({ status: "processing" }, esperar)
+  .with({ status: "not-found" },  recuperar)   // ← o compilador EXIGIU este
+  .exhaustive();
+```
+
+<div v-click class="mt-4 border-l-4 border-teal-400 pl-4">
+Mesmo código, de <code>switch</code> pra <code>match(…).exhaustive()</code> — e agora, quando o contrato ganha um status novo, o compilador <b>obriga</b> todo consumidor a tratar. Não dá mais pra esquecer um caso.
+</div>
+
+<div v-click class="mt-4 text-teal-300 border-l-4 border-teal-400 pl-4">
+🤖 E esse PR? Escrito <b>com IA</b>. É <i>exatamente</i> por isso que o <code>.exhaustive()</code> importa:
+a máquina escreveu, o compilador garantiu. Ele não liga se foi você ou a IA que digitou.
+</div>
+
+---
+
 # Quando NÃO usar
 
 <div class="text-xl mt-6 space-y-3">
@@ -616,7 +639,7 @@ linhas.filter(isMatching(myPattern))
 <v-clicks>
 
 - **+~12kb** no bundle (tree-shakeable, mas existe)
-- custo de runtime vs. `switch` puro → ruído em UI; em hot loop, **mede — não chuta** 📊
+- custo de runtime vs. `switch` puro → ruído em UI; em hot loop, **mede — não chuta**
 - curva pra quem nunca viu matching
 - `if` de um caso só? Continua sendo um `if`. Não force.
 
@@ -630,7 +653,7 @@ linhas.filter(isMatching(myPattern))
 
 <div class="text-lg mt-4 space-y-2">
 
-1. Você **já faz** pattern matching — em todo reducer e ternário JSX
+1. Você **já faz** pattern matching — em todo reducer e ternário aninhado
 2. ideia de 50 anos; JS ainda não tem nativo (TC39 stage 1)
 3. **ts-pattern** entrega hoje, type-safe — brilha em **objeto / multi-campo / união discriminada**
 4. `.exhaustive()` transforma "esqueci um caso" em **erro de compilação**
@@ -690,9 +713,17 @@ class: text-center
 
 ### Perguntas?
 
+<div class="flex flex-col items-center mt-6">
+  <div class="bg-white p-3 rounded-xl shadow-xl">
+    <div class="w-48 h-48 bg-contain bg-no-repeat bg-center" style="background-image:url(/qr_code.png)"></div>
+  </div>
+  <div class="text-sm opacity-70 mt-3">📱 slides, links e tudo mais ☝️</div>
+</div>
+
 <div class="mt-8 opacity-80 text-base">
 github.com/gvergnaud/ts-pattern &nbsp;·&nbsp; tc39/proposal-pattern-matching<br>
 github.com/mz-alm &nbsp;·&nbsp; linkedin.com/in/mzalmeida &nbsp;·&nbsp; github.com/mz-alm/ts-pattern-talk
 </div>
 
-<div class="mt-10 text-xs opacity-40">feito com Slidev · powered by Vue</div>
+<div class="mt-6 text-xs opacity-40">feito com Slidev · powered by Vue</div>
+
